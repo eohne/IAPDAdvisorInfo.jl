@@ -4,44 +4,20 @@ module IAPDAdvisorInfo
 using HTTP
 using JSON3
 
-export get_iapd_by_name, get_iapd_by_number
-
-
-"""
-    get_iapd_by_number(sec_number)
-
-Retrieves the record on IAPD matching the SEC-Number. Returns a `NamedTuple` with the following keys:
- - name: The name of the firm
- - crd: The firms CRD Number
- - snum: The SEC-Number
- - other_names: Vector of other names the firm conudcts business under
-"""
-function get_iapd_by_number(sec_number)
-    res = HTTP.get("https://api.adviserinfo.sec.gov/search/firm?query=$(sec_number)&hl=true&nrows=12&start=0&r=25&sort=score%2Bdesc&wt=json");
-    json_res = JSON3.read(res.body)
-    if json_res.hits.total >0
-        crd = json_res.hits.hits[begin]._source.firm_source_id
-        snum = json_res.hits.hits[begin]._source.firm_ia_full_sec_number
-        firm_name = json_res.hits.hits[begin]._source.firm_name
-        firm_other_names = json_res.hits.hits[begin]._source.firm_other_names
-    else
-        snum, firm_name, firm_other_names, crd = "","","",""
-    end
-    return (;name=firm_name, crd = crd, sec_num = snum,other_names = firm_other_names)
-end
-
-
+export search_iapd
 
 """
-    get_iapd_by_name(firm_name)
+    search_iapd(firm_name)
 
-Retrieves the record on IAPD matching the search string (Firm Name). Returns a `NamedTuple` with the following keys:
+Retrieves the record on IAPD matching the search string (Firm Name, CRD number, or SEC Number). When looking for SEC-Numbers import them as following XXX-XXXXX (for example 801-69413).
+
+Returns a `NamedTuple` with the following keys:
  - name: Vector of the names of the matched firms
  - crd: Vector of the matched firms CRD Numbers
  - snum: Vector of the SEC-Numbers
  - other_names: Vector of a vector of other names the match firms conudcts business under
 """
-function get_iapd_by_name(firm_name)
+function search_iapd(firm_name)
     res = HTTP.get("https://api.adviserinfo.sec.gov/search/firm?query=$(replace(firm_name, " "=>"%20"))&hl=true&nrows=12&start=0&r=25&sort=score%2Bdesc&wt=json");
     json_res = JSON3.read(res.body)
     if json_res.hits.total >0
